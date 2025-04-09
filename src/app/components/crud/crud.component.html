@@ -1,0 +1,119 @@
+<div class="card">
+
+    <div class="flex justify-between items-center">
+        <h1>Editar excel</h1>
+
+        <p-fileupload mode="basic"
+                    name="excelFile"
+                    chooseIcon="pi pi-upload"
+                    url="https://www.primefaces.org/cdn/api/upload.php" 
+                    accept=".xls,.xlsx" 
+                    (onUpload)="onUpload($event)" 
+                    [auto]="true" 
+                    chooseLabel="Escolher arquivo" />
+    </div>
+
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2"  /> <!-- (onClick)="openNew()" -->
+            <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined [disabled]="!selectedEntities || !selectedEntities.length" /> <!-- (onClick)="deleteSelectedProducts()" -->
+        </ng-template>
+
+        <ng-template #end>
+            <p-button label="Export" icon="pi pi-upload" severity="secondary" /> <!-- (onClick)="exportCSV()" -->
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="entities"
+        [rows]="60"
+        [columns]="cols"
+        [tableStyle]="{ 'min-width': '75rem' }"
+        [(selection)]="selectedEntities"
+        [rowHover]="true"
+        dataKey="id"
+    >
+        <ng-template #caption>
+            <div class="flex items-center justify-between">
+                <h5 class="m-0">Gerenciamento da Tesouraria</h5>
+            </div>
+        </ng-template>
+        <ng-template #header>
+            <tr>
+                <th style="width: 3rem">
+                    <p-tableHeaderCheckbox />
+                </th>
+                <th style="min-width: 16rem">Item</th>
+                <th pSortableColumn="date" style="min-width:16rem">
+                    Data
+                    <p-sortIcon field="date" />
+                </th>
+                <th pSortableColumn="description" style="min-width: 8rem">
+                    Descrição
+                    <p-sortIcon field="description" />
+                </th>
+                <th pSortableColumn="action" style="min-width:10rem">
+                    Ação
+                    <p-sortIcon field="action" />
+                </th>
+                <th pSortableColumn="price" style="min-width: 12rem">
+                    Valor
+                    <p-sortIcon field="price" />
+                </th>
+                <th style="min-width: 12rem"></th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-entity let-index="$index">
+            <tr>
+                <td style="width: 3rem">
+                    <p-tableCheckbox [value]="entity" />
+                </td>
+                <td style="min-width: 12rem">{{ index }}</td>
+                <td style="min-width: 16rem">{{ entity.date }}</td>
+                <td>{{ entity.description }}</td>
+                <td>{{ entity.action }}</td>
+                <td>{{ entity.price | currency: 'BRL' }}</td>
+                <td>
+                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" /> <!-- (click)="editProduct(product)" -->
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" /> <!-- (click)="deleteProduct(product)" -->
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <p-dialog [(visible)]="modal" [style]="{ width: '450px' }" header="Edição" [modal]="true">
+        <ng-template #content>
+            <div class="flex flex-col gap-6">
+                <div>
+                    <label for="name" class="block font-bold mb-3">Data</label>
+                    <input type="text" pInputText id="name" [(ngModel)]="selectedEntity.date" required autofocus fluid />
+                    <!-- <small class="text-red-500" *ngIf="submitted && !product.name">Name is required.</small> -->
+                </div>
+                <div>
+                    <label for="description" class="block font-bold mb-3">Descrição</label>
+                    <textarea id="description" pTextarea [(ngModel)]="selectedEntity.description" required rows="3" cols="20" fluid></textarea>
+                </div>
+
+                <div>
+                    <label for="inventoryStatus" class="block font-bold mb-3">Ação</label>
+                    <p-select [(ngModel)]="selectedEntity.action" inputId="inventoryStatus" [options]="actions" optionLabel="label" optionValue="label" placeholder="Select a Status" fluid />
+                </div>
+
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-6">
+                        <label for="price" class="block font-bold mb-3">Valor</label>
+                        <p-inputnumber id="price" [(ngModel)]="selectedEntity.price" mode="currency" currency="URL" locale="pt-br" fluid />
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+
+        <ng-template #footer>
+            <p-button label="Cancel" icon="pi pi-times" text /> <!-- (click)="hideDialog()" -->
+            <p-button label="Save" icon="pi pi-check" /> <!-- (click)="saveProduct()" -->
+        </ng-template>
+    </p-dialog>
+
+    <p-confirmdialog [style]="{ width: '450px' }" />
+</div>
