@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
@@ -18,7 +18,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { FileUploadModule } from 'primeng/fileupload';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { ConfirmationService } from 'primeng/api';
 
 interface Column {
@@ -28,10 +28,10 @@ interface Column {
 }
 
 export class Entity {
-  date: number;
-  description: string;
-  action: string;
-  price: number;
+  date?: number;
+  description?: string;
+  action?: string;
+  price?: number;
 }
 
 @Component({
@@ -55,7 +55,9 @@ export class Entity {
     TagModule,
     InputIconModule,
     IconFieldModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    ReactiveFormsModule,
+    FormsModule
   ],
   providers: [
     ConfirmationService
@@ -72,14 +74,90 @@ export class CrudComponent {
   public cols: Column[];
 
   public modal: boolean = false;
-  public selectedEntity: any;
+  public selectedEntity: Entity = null;
+  public selectedIndex: number = -1;
+  public total: number = 0;
+  public form: FormGroup;
 
-  constructor() {
+  constructor(
+    private formBuilder: FormBuilder
+  ) {
     this.actions = [
       { description: 'Entrada'},
       { description: 'Saída' }
     ]
-    this.cols = [];  
+    this.cols = [];
+
+    this.form = this.formBuilder.group({
+      description: [''],
+      date: [],
+      price: [],
+      action: []
+    })
+  }
+
+  openNew() {
+    this.modal = true;
+  }
+
+  hideDialog() {
+    this.selectedEntity = null;
+    this.selectedIndex = -1;
+    this.modal = false;
+  }
+
+  saveEntity() {
+    let entity: Entity = {
+      description: this.form.get('description').value,
+      date: this.form.get('date').value,
+      price: this.form.get('price').value,
+      action: this.form.get('action').value
+    }
+
+    if (this.selectedIndex == -1) {
+      this.entities.push(entity);
+    }
+    else {
+      this.entities[this.selectedIndex] = entity;
+  
+    }
+
+    this.updateTotal();
+    this.hideDialog();
+  }
+
+  editEntity(entity: Entity, index: number): void {
+    this.selectedEntity = entity;
+    this.selectedIndex = index;
+
+    this.form.patchValue({
+      description: this.selectedEntity.description,
+      date: this.selectedEntity.date,
+      price: this.selectedEntity.price,
+      action: this.selectedEntity.action
+    })
+
+    this.modal = true;
+  } 
+
+  deleteEntity(index: number) {
+    this.entities.splice(index, 1);
+
+    this.updateTotal();
+  }
+
+  updateTotal() {
+    let count: number = 0;
+    this.entities.forEach((entity: Entity) => {
+      if (entity.action == 'Entrada') {
+        count += entity.price;
+      }
+      else {
+        count -= entity.price;
+      }
+    });
+
+    this.total = count;
   }
 
   onUpload(event: any) {
@@ -113,9 +191,6 @@ export class CrudComponent {
        * E cada célula da linha é um valor dentro desse array.
        */
 
-  
-      console.log('Conteúdo do Excel:', jsonData);
-
       let total: number = 0;
 
       for (let i: number = 5; i < 50; i++) {
@@ -147,9 +222,115 @@ export class CrudComponent {
         }
       }
 
-      console.log(total);
+      this.total = total;
     };
   
     reader.readAsArrayBuffer(file);
   }
+
+  exportExcel() {
+    // Dados da planilha
+    let data = [
+      [`${new Date().toLocaleString('pt-BR', { month: 'long' }).toUpperCase()} / ${new Date().getFullYear()}`],
+      [''],
+      ['DÉBITO','', '', 'CAIXA','', 'CRÉDITO'],
+      [''],
+      ['DATA', 'ITEM', 'DESCRIÇÃO', 'ENTRADA', 'SAÍDA', '', '']
+    ];
+  
+    let inValue: number = 0;
+    let outValue: number = 0;
+    this.entities.forEach((entity: Entity, index: number) => {
+      let array: any[] = [
+        entity.date,
+        (index + 1),
+        entity.description
+      ];
+  
+      if (entity.action == 'Entrada') {
+        array.push(entity.price);
+        array.push('');
+        inValue += entity.price;
+      } else {
+        array.push('');
+        array.push(entity.price);
+        outValue += entity.price;
+      }
+  
+      array.push('');
+      array.push('');
+      data.push(array);
+    });
+  
+    // Linha de totais
+    data.push(['', '', '', `${inValue}`, `${outValue}`, '', '']);
+
+    let dif = 49 - (this.entities.length + 5);
+
+    for (let i = 0; i < dif; i++) {
+      data.push(['', '', '', '', '', '', '']);
+    }
+  
+    data.push(['', '', '', '', '', '', `${inValue - outValue}`]);
+
+    // Criar worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+  
+    // Mesclagens
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+      { s: { r: 2, c: 0 }, e: { r: 3, c: 2 } },
+      { s: { r: 2, c: 3 }, e: { r: 3, c: 4 } },
+      { s: { r: 2, c: 5 }, e: { r: 3, c: 6 } }
+    ];
+  
+  // Estilo das bordas e ajustes
+  const range = XLSX.utils.decode_range(worksheet['!ref']!);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = worksheet[cellRef];
+      if (!cell) continue;
+  
+      // Verifica se é a coluna de entrada (coluna 3) ou saída (coluna 4)
+      const isMoneyCol = (C === 3 || C === 4) && R > 4; // R > 4 evita formatar cabeçalhos
+  
+      cell.s = {
+        border: {
+          top:    { style: 'medium', color: { rgb: "000000" } },
+          bottom: { style: 'medium', color: { rgb: "000000" } },
+          left:   { style: 'medium', color: { rgb: "000000" } },
+          right:  { style: 'medium', color: { rgb: "000000" } }
+        },
+        alignment: {
+          horizontal: 'center',
+          vertical: 'center'
+        },
+        font: {
+          name: 'Arial',
+          sz: 10
+        },
+        ...(isMoneyCol ? { numFmt: 'R$ #,##0.00' } : {}) // aplica formatação de moeda
+      };
+    }
+  }
+
+  // Ajustar largura das colunas automaticamente
+  const colWidths = data[0].map((_, colIndex) => {
+    const maxLength = data.reduce((max, row) => {
+      const cell = row[colIndex];
+      return Math.max(max, cell ? cell.toString().length : 0);
+    }, 10); // mínimo de largura
+    return { wch: maxLength + 2 }; // +2 para folga
+  });
+  worksheet['!cols'] = colWidths;
+  
+    // Criar workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, new Date().toLocaleString('pt-BR', { month: 'long' }));
+  
+    // Gerar e salvar
+    XLSX.writeFile(workbook, `${new Date().toLocaleString('pt-BR', { month: 'long' })}.xlsx`);
+  }  
 }
