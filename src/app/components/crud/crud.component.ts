@@ -196,7 +196,7 @@ export class CrudComponent {
       for (let i: number = 5; i < 50; i++) {
         let array: any[] = jsonData[i];
 
-        if (array[0] != undefined) {
+        if (array[0] != undefined && array[0] != '') {
           let entity: Entity = {
             date: 0,
             action: '',
