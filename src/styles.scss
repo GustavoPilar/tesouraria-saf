@@ -3,3 +3,8 @@
 @use './assets/layout/layout.scss';
 @use 'primeicons/primeicons.css';
 @use './assets/demo/demo.scss';
+
+:root {
+    --primary-color: var(--p-blue-500);
+    --p-button-primary-background: var(--p-blue-500)
+}

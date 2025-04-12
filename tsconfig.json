@@ -19,7 +19,8 @@
         "module": "ES2022",
         "baseUrl": "./",
         "paths": {
-            "@app/*": ["./src/app/*"]
+            "@app/*": ["./src/app/*"],
+            "@img/*": ["./src/assets/img/*"]
         }
     },
     "angularCompilerOptions": {
@@ -30,6 +31,7 @@
     },
     "include": [
         "src/**/*",
-        "src/**/*.component.ts"
+        "src/**/*.component.ts",
+        "src/**/*.png"
     ]
 }

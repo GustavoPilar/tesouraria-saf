@@ -57,7 +57,7 @@ export class Entity {
     IconFieldModule,
     ConfirmDialogModule,
     ReactiveFormsModule,
-    FormsModule
+    
   ],
   providers: [
     ConfirmationService

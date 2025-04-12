@@ -1,3 +1,81 @@
 <div class="fluid">
-    <p-button routerLink="/crud">Excel</p-button>
+    <!-- <p-button routerLink="/crud">Excel</p-button> -->
+
+    <div class="card">
+        <div class="flex justify-between items-center">
+            <h1>Planilha</h1>
+            <p-button icon="pi pi-plus" label="Adicionar" (onClick)="openNew()"></p-button>
+        </div>
+
+        <hr>
+
+        <div class="mb-3 flex justify-between items-center">
+            <p-fileupload mode="basic"
+            name="excelFile"
+            chooseIcon="pi pi-upload"
+            url="https://www.primefaces.org/cdn/api/upload.php" 
+            accept=".xls,.xlsx"  
+            [auto]="true" 
+            chooseLabel="Importar"
+            (onUpload)="onUpload($event)" />
+
+            <p-button icon="pi pi-upload" label="Exportar" severity="secondary" (onClick)="exportExcel()"></p-button>
+        </div>
+
+        <hr>
+
+        <div class="flex justify-between items-center">
+            <p>Total de itens: {{ entities.length }}</p>
+            <p>Valor total: {{ totalValue | currency: 'BRL' }}</p>
+        </div>
+    </div>
+
+    @for (entity of entities; track entity; let index = $index) {
+        <div class="card">
+
+            <small>Descrição:</small>
+            <h4>{{ entity.description }}</h4>    
+
+            <div class="flex justify-between items-center">
+                <p-tag [value]="entity.price | currency: 'BRL'" [severity]="entity.action == 'Entrada' ? 'success' : 'danger'" styleClass="dark:!bg-surface-900" />
+
+                <div>
+                    <p-button severity="primary" icon="pi pi-pencil" class="m-2" (onClick)="editEntity(entity, index)"></p-button>
+                    <p-button severity="danger" icon="pi pi-trash"></p-button>
+                </div>
+            </div>
+        </div>
+    }
 </div>
+
+<p-dialog [(visible)]="modal" [style]="{ width: '450px' }" [header]="selectedEntity?.description ?? 'Adicionar'" [modal]="true">
+    <ng-template #content>
+        <div class="fluid">
+            <form [formGroup]="form">
+                <div class="formgrid grid">
+                    <div class="field col">
+                        <label for="action">Ação</label>
+                        <p-select formControlName="action" [options]="actions" optionLabel="description" optionValue="id" placeholder="Selecione a ação" class="w-full mb-5" />
+                    </div>
+                    <div class="field col">
+                        <label for="date">Data</label>
+                        <p-inputnumber formControlName="date" mode="decimal" min="1" max="31" class="w-full mb-5" placeholder="Digite apenas o dia"></p-inputnumber>
+                    </div>
+                    <div class="field col">
+                        <label for="date">Descrição</label>
+                        <input type="text" pInputText formControlName="description" class="border-rounded p-2 mb-5 w-full" placeholder="Digite o que é" style="border: 1px solid var(--p-surface-300); border-radius: .5rem;"/>
+                    </div>
+                    <div class="field col">
+                        <label for="price">Valor</label>
+                        <p-inputnumber formControlName="price" mode="currency" currency="BRL" locale="pt-br" class="w-full" placeholder="Digite o valor"></p-inputnumber>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </ng-template>
+
+    <ng-template #footer>
+        <p-button label="Cancel" icon="pi pi-times" text /> <!-- (click)="hideDialog()" -->
+        <p-button label="Save" icon="pi pi-check" (onClick)="saveEntity()"/> <!-- (click)="saveProduct()" -->
+    </ng-template>
+</p-dialog>
